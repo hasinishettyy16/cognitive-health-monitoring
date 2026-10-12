@@ -1,122 +1,2027 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(const MyApp());
+const teal = Color(0xFF006F66);
+const mint = Color(0xFFE4F3EF);
+const totalStudyDays = 15;
+const wearableDays = [1, 15];
+const allowTestShortcut = true; // Set false before the actual study.
+const bandNamePrefix = 'YogaBand';
+const bleServiceUuid = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E';
+const bleDataUuid = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const YogaApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class YogaApp extends StatelessWidget {
+  const YogaApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  Widget build(BuildContext context) => MaterialApp(
+        title: 'Yoga Biofeedback',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: teal),
+          scaffoldBackgroundColor: const Color(0xFFF7FAF9),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        home: const AuthGate(),
+      );
+}
+
+void msg(BuildContext context, String text) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(text)));
+}
+
+bool emailIsValid(String email) =>
+    RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email.trim());
+
+String authError(FirebaseAuthException e) {
+  switch (e.code) {
+    case 'invalid-email':
+      return 'Enter a valid email address.';
+    case 'user-not-found':
+    case 'wrong-password':
+    case 'invalid-credential':
+      return 'Incorrect email or password.';
+    case 'email-already-in-use':
+      return 'An account already exists for this email.';
+    case 'weak-password':
+      return 'Choose a password with at least 6 characters.';
+    case 'too-many-requests':
+      return 'Too many attempts. Please try again later.';
+    default:
+      return e.message ?? 'Authentication failed.';
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+// ======================== AUTHENTICATION ========================
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) => StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return snapshot.data == null
+              ? const WelcomeScreen()
+              : const HomeScreen();
+        },
+      );
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircleAvatar(
+                  radius: 56,
+                  backgroundColor: mint,
+                  child: Icon(
+                    Icons.self_improvement,
+                    size: 70,
+                    color: teal,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Yoga Biofeedback',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Wearable measurements, guided breathing, '
+                  'and 15-day cognitive tracking.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 38),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: FilledButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LoginScreen(),
+                      ),
+                    ),
+                    child: const Text('Login'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SignUpScreen(),
+                      ),
+                    ),
+                    child: const Text('Create an account'),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                const Text(
+                  'Research prototype — not a medical diagnostic tool.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final email = TextEditingController();
+  final password = TextEditingController();
+  bool busy = false;
+
+  @override
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    super.dispose();
+  }
+
+  Future<void> login() async {
+    final e = email.text.trim();
+    final p = password.text;
+
+    if (e.isEmpty || p.isEmpty) {
+      msg(context, 'Please enter both email and password.');
+      return;
+    }
+    if (!emailIsValid(e)) {
+      msg(context, 'Enter a valid email address.');
+      return;
+    }
+
+    setState(() => busy = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: e,
+        password: p,
+      );
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AuthGate()),
+          (_) => false,
+        );
+      }
+    } on FirebaseAuthException catch (ex) {
+      if (mounted) msg(context, authError(ex));
+    } catch (_) {
+      if (mounted) msg(context, 'Login failed. Check your connection.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Login')),
+        body: ListView(
+          padding: const EdgeInsets.all(24),
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            const Text(
+              'Welcome back 👋',
+              style: TextStyle(
+                fontSize: 29,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: password,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+              onSubmitted: (_) {
+                if (!busy) login();
+              },
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 52,
+              child: FilledButton(
+                onPressed: busy ? null : login,
+                child: busy
+                    ? const CircularProgressIndicator()
+                    : const Text('Login'),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SignUpScreen(),
+                ),
+              ),
+              child: const Text('New user? Create an account'),
+            ),
+          ],
+        ),
+      );
+}
+
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final name = TextEditingController();
+  final email = TextEditingController();
+  final password = TextEditingController();
+  bool busy = false;
+
+  @override
+  void dispose() {
+    name.dispose();
+    email.dispose();
+    password.dispose();
+    super.dispose();
+  }
+
+  Future<void> createAccount() async {
+    final n = name.text.trim();
+    final e = email.text.trim();
+    final p = password.text;
+
+    if (n.isEmpty || e.isEmpty || p.isEmpty) {
+      msg(context, 'Please fill in all fields.');
+      return;
+    }
+    if (!emailIsValid(e)) {
+      msg(context, 'Enter a valid email address.');
+      return;
+    }
+    if (p.length < 6) {
+      msg(context, 'Password must be at least 6 characters.');
+      return;
+    }
+
+    setState(() => busy = true);
+    try {
+      final result =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: e,
+        password: p,
+      );
+      await result.user?.updateDisplayName(n);
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AuthGate()),
+          (_) => false,
+        );
+      }
+    } on FirebaseAuthException catch (ex) {
+      if (mounted) msg(context, authError(ex));
+    } catch (_) {
+      if (mounted) msg(context, 'Could not create account. Try again.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Create account')),
+        body: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            const Text(
+              'Create your account 🌿',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: password,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password (6+ characters)',
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 52,
+              child: FilledButton(
+                onPressed: busy ? null : createAccount,
+                child: busy
+                    ? const CircularProgressIndicator()
+                    : const Text('Create account'),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+// ======================== SENSOR MODEL ========================
+
+class SensorReading {
+  final double? hr;
+  final double? rmssd;
+  final double? sdnn;
+  final double? gsr;
+  final double? motion;
+
+  const SensorReading({
+    this.hr,
+    this.rmssd,
+    this.sdnn,
+    this.gsr,
+    this.motion,
+  });
+
+  bool get hasData =>
+      hr != null || rmssd != null || sdnn != null || gsr != null || motion != null;
+
+  Map<String, dynamic> toJson() => {
+        'hr': hr,
+        'rmssd': rmssd,
+        'sdnn': sdnn,
+        'gsr': gsr,
+        'motion': motion,
+      };
+
+  factory SensorReading.fromJson(Map<String, dynamic> j) => SensorReading(
+        hr: _number(j['hr']),
+        rmssd: _number(j['rmssd']),
+        sdnn: _number(j['sdnn']),
+        gsr: _number(j['gsr']),
+        motion: _number(j['motion']),
+      );
+
+  static double? _number(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse('$value');
+  }
+
+  static SensorReading demoBefore() => const SensorReading(
+        hr: 88,
+        rmssd: 28,
+        sdnn: 36,
+        gsr: 1.8,
+        motion: 0.24,
+      );
+
+  static SensorReading demoAfter() => const SensorReading(
+        hr: 79,
+        rmssd: 33,
+        sdnn: 40,
+        gsr: 1.6,
+        motion: 0.12,
+      );
+
+  static SensorReading? parse(List<int> bytes) {
+    final text = utf8.decode(bytes, allowMalformed: true).trim();
+    if (text.isEmpty) return null;
+
+    try {
+      final decoded = jsonDecode(text);
+      if (decoded is Map) {
+        double? find(List<String> keys) {
+          for (final key in keys) {
+            final value = decoded[key] ?? decoded[key.toUpperCase()];
+            final number = _number(value);
+            if (number != null) return number;
+          }
+          return null;
+        }
+
+        final r = SensorReading(
+          hr: find(['hr', 'heart_rate', 'heartRate', 'bpm']),
+          rmssd: find(['rmssd']),
+          sdnn: find(['sdnn']),
+          gsr: find(['gsr', 'eda']),
+          motion: find(['motion', 'movement']),
+        );
+        if (r.hasData) return r;
+      }
+    } catch (_) {}
+
+    final numbers = text
+        .split(RegExp(r'[,;|\s]+'))
+        .map(double.tryParse)
+        .whereType<double>()
+        .toList();
+
+    if (numbers.length >= 4) {
+      return SensorReading(
+        hr: numbers[0],
+        rmssd: numbers[1],
+        sdnn: numbers[2],
+        gsr: numbers[3],
+        motion: numbers.length > 4 ? numbers[4] : null,
+      );
+    }
+    return null;
+  }
+}
+
+// ======================== BLUETOOTH ========================
+
+class BandService extends ChangeNotifier {
+  BluetoothDevice? device;
+  SensorReading? latest;
+  StreamSubscription<List<int>>? subscription;
+  String status = 'No band connected';
+
+  bool get connected => device != null;
+
+  Future<void> connect(BluetoothDevice d) async {
+    await disconnect();
+    status = 'Connecting…';
+    notifyListeners();
+
+    try {
+      await d.connect(license: License.nonprofit);
+      device = d;
+      final services = await d.discoverServices();
+      bool subscribed = false;
+
+      for (final service in services) {
+        for (final c in service.characteristics) {
+          if (c.properties.notify || c.properties.indicate) {
+            await c.setNotifyValue(true);
+            subscription = c.onValueReceived.listen((bytes) {
+              final parsed = SensorReading.parse(bytes);
+              if (parsed != null) {
+                latest = parsed;
+                status = 'Live sensor data received';
+              } else {
+                status = 'Connected; waiting for sensor packets';
+              }
+              notifyListeners();
+            });
+            d.cancelWhenDisconnected(subscription!);
+            subscribed = true;
+          } else if (c.properties.read &&
+              c.uuid.toString().toLowerCase() == bleDataUuid.toLowerCase()) {
+            try {
+              latest = SensorReading.parse(await c.read());
+            } catch (_) {}
+          }
+        }
+      }
+
+      status = subscribed
+          ? 'Connected to ${d.platformName.isEmpty ? d.remoteId.str : d.platformName}'
+          : 'Connected, but no notification characteristic found';
+      notifyListeners();
+    } catch (_) {
+      device = null;
+      status = 'Connection failed. Check band power and BLE settings.';
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> disconnect() async {
+    await subscription?.cancel();
+    subscription = null;
+    final oldDevice = device;
+    device = null;
+    if (oldDevice != null) {
+      try {
+        await oldDevice.disconnect();
+      } catch (_) {}
+    }
+    status = 'Band disconnected';
+    if (hasListeners) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    unawaited(subscription?.cancel());
+    final oldDevice = device;
+    if (oldDevice != null) unawaited(oldDevice.disconnect());
+    super.dispose();
+  }
+}
+
+class BandPicker extends StatefulWidget {
+  const BandPicker({super.key});
+
+  @override
+  State<BandPicker> createState() => _BandPickerState();
+}
+
+class _BandPickerState extends State<BandPicker> {
+  final Map<String, ScanResult> results = {};
+  StreamSubscription<List<ScanResult>>? subscription;
+  bool scanning = false;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    subscription = FlutterBluePlus.scanResults.listen((items) {
+      if (!mounted) return;
+      setState(() {
+        for (final result in items) {
+          results[result.device.remoteId.str] = result;
+        }
+      });
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => scan());
+  }
+
+  Future<void> scan() async {
+    setState(() {
+      results.clear();
+      error = null;
+      scanning = true;
+    });
+
+    try {
+      if (Platform.isAndroid) {
+        final status = await [
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+          Permission.locationWhenInUse,
+        ].request();
+
+        final modern = status[Permission.bluetoothScan]?.isGranted == true &&
+            status[Permission.bluetoothConnect]?.isGranted == true;
+        final legacy = status[Permission.locationWhenInUse]?.isGranted == true;
+
+        if (!modern && !legacy) {
+          throw Exception('Allow Bluetooth/Nearby devices permission.');
+        }
+      }
+
+      if (!await FlutterBluePlus.isSupported) {
+        throw Exception('Bluetooth Low Energy is not supported.');
+      }
+
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 8));
+      await Future.delayed(const Duration(seconds: 8));
+      await FlutterBluePlus.stopScan();
+    } catch (e) {
+      error = '$e';
+    }
+
+    if (mounted) setState(() => scanning = false);
+  }
+
+  @override
+  void dispose() {
+    subscription?.cancel();
+    unawaited(FlutterBluePlus.stopScan());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final list = results.values.toList()
+      ..sort((a, b) {
+        final aMatch = a.device.platformName
+            .toLowerCase()
+            .startsWith(bandNamePrefix.toLowerCase());
+        final bMatch = b.device.platformName
+            .toLowerCase()
+            .startsWith(bandNamePrefix.toLowerCase());
+        if (aMatch != bMatch) return aMatch ? -1 : 1;
+        return b.rssi.compareTo(a.rssi);
+      });
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Connect Yoga Band')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Text(
+              'Turn on the ESP32 band and keep it nearby.',
+              style: TextStyle(color: Colors.black54),
+            ),
+            if (error != null)
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(error!, style: const TextStyle(color: Colors.red)),
+              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    scanning ? 'Scanning…' : '${list.length} device(s) found',
+                  ),
+                ),
+                IconButton(onPressed: scan, icon: const Icon(Icons.refresh)),
+              ],
+            ),
+            Expanded(
+              child: list.isEmpty
+                  ? Center(
+                      child: Text(
+                        scanning
+                            ? 'Searching for BLE devices…'
+                            : 'No band found. Check power and scan again.',
+                      ),
+                    )
+                  : ListView(
+                      children: [
+                        for (final result in list)
+                          ListTile(
+                            leading: const Icon(Icons.watch),
+                            title: Text(
+                              result.device.platformName.isEmpty
+                                  ? 'Unnamed BLE device'
+                                  : result.device.platformName,
+                            ),
+                            subtitle: Text(
+                              '${result.device.remoteId.str} • ${result.rssi} dBm',
+                            ),
+                            onTap: () => Navigator.pop(context, result.device),
+                          ),
+                      ],
+                    ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+}
+
+Future<BluetoothDevice?> pickBand(BuildContext context) =>
+    Navigator.push<BluetoothDevice>(
+      context,
+      MaterialPageRoute(builder: (_) => const BandPicker()),
+    );
+
+// ======================== STUDY DATA ========================
+
+class LogEntry {
+  final String mode, date, routine;
+  final int day;
+  final SensorReading? before, after;
+  final int? preScore, postScore;
+  final double? preReaction, postReaction;
+  final int stress, alertness, fatigue;
+  final bool demo;
+
+  const LogEntry({
+    required this.mode,
+    required this.date,
+    required this.day,
+    required this.routine,
+    this.before,
+    this.after,
+    this.preScore,
+    this.postScore,
+    this.preReaction,
+    this.postReaction,
+    this.stress = 3,
+    this.alertness = 3,
+    this.fatigue = 3,
+    this.demo = false,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'mode': mode,
+        'date': date,
+        'day': day,
+        'routine': routine,
+        'before': before?.toJson(),
+        'after': after?.toJson(),
+        'preScore': preScore,
+        'postScore': postScore,
+        'preReaction': preReaction,
+        'postReaction': postReaction,
+        'stress': stress,
+        'alertness': alertness,
+        'fatigue': fatigue,
+        'demo': demo,
+      };
+
+  factory LogEntry.fromJson(Map<String, dynamic> j) => LogEntry(
+        mode: '${j['mode']}',
+        date: '${j['date']}',
+        day: (j['day'] as num?)?.toInt() ?? 0,
+        routine: '${j['routine']}',
+        before: j['before'] is Map
+            ? SensorReading.fromJson(Map<String, dynamic>.from(j['before']))
+            : null,
+        after: j['after'] is Map
+            ? SensorReading.fromJson(Map<String, dynamic>.from(j['after']))
+            : null,
+        preScore: (j['preScore'] as num?)?.toInt(),
+        postScore: (j['postScore'] as num?)?.toInt(),
+        preReaction: (j['preReaction'] as num?)?.toDouble(),
+        postReaction: (j['postReaction'] as num?)?.toDouble(),
+        stress: (j['stress'] as num?)?.toInt() ?? 3,
+        alertness: (j['alertness'] as num?)?.toInt() ?? 3,
+        fatigue: (j['fatigue'] as num?)?.toInt() ?? 3,
+        demo: j['demo'] == true,
+      );
+}
+
+String todayKey() {
+  final d = DateTime.now();
+  return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+}
+
+class LogStore {
+  static String _key(String uid) => 'yoga_logs_$uid';
+  static String _startKey(String uid) => 'yoga_start_$uid';
+
+  static Future<List<LogEntry>> load(String uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_key(uid));
+    if (raw == null) return [];
+    try {
+      final decoded = jsonDecode(raw) as List;
+      return decoded
+          .map((e) => LogEntry.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> save(String uid, LogEntry entry) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = await load(uid);
+
+    if (entry.mode == 'long_term') {
+      list.removeWhere(
+        (e) => e.mode == entry.mode && e.day == entry.day && e.date == entry.date,
+      );
+    }
+    list.add(entry);
+    await prefs.setString(
+      _key(uid),
+      jsonEncode(list.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  static Future<DateTime> startDate(String uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_startKey(uid));
+    if (existing != null) {
+      final d = DateTime.tryParse(existing);
+      if (d != null) return DateTime(d.year, d.month, d.day);
+    }
+    final n = DateTime.now();
+    final d = DateTime(n.year, n.month, n.day);
+    await prefs.setString(_startKey(uid), d.toIso8601String());
+    return d;
+  }
+
+  static String csv(List<LogEntry> logs) {
+    final rows = <List<String>>[
+      [
+        'date', 'mode', 'day', 'routine', 'demo_sensor',
+        'pre_hr', 'post_hr', 'pre_rmssd', 'post_rmssd',
+        'pre_gsr', 'post_gsr', 'pre_score_pct', 'post_score_pct',
+        'pre_reaction_ms', 'post_reaction_ms',
+        'stress_1to5', 'alertness_1to5', 'fatigue_1to5',
+      ],
+    ];
+    for (final e in logs) {
+      rows.add([
+        e.date, e.mode, '${e.day}', e.routine, '${e.demo}',
+        '${e.before?.hr ?? ''}', '${e.after?.hr ?? ''}',
+        '${e.before?.rmssd ?? ''}', '${e.after?.rmssd ?? ''}',
+        '${e.before?.gsr ?? ''}', '${e.after?.gsr ?? ''}',
+        '${e.preScore ?? ''}', '${e.postScore ?? ''}',
+        '${e.preReaction ?? ''}', '${e.postReaction ?? ''}',
+        '${e.stress}', '${e.alertness}', '${e.fatigue}',
+      ]);
+    }
+    return rows
+        .map((row) => row.map((v) => '"${v.replaceAll('"', '""')}"').join(','))
+        .join('\n');
+  }
+}
+
+// ======================== HOME DASHBOARD ========================
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<LogEntry> logs = [];
+  bool loading = true;
+  String get uid => FirebaseAuth.instance.currentUser!.uid;
+
+  @override
+  void initState() {
+    super.initState();
+    reload();
+  }
+
+  Future<void> reload() async {
+    final values = await LogStore.load(uid);
+    if (mounted) {
+      setState(() {
+        logs = values;
+        loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final days = logs
+        .where((e) => e.mode == 'long_term')
+        .map((e) => e.day)
+        .toSet()
+        .length;
+    final immediate = logs.where((e) => e.mode == 'immediate').length;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Yoga Biofeedback'),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryScreen()),
+            ).then((_) => reload()),
+            icon: const Icon(Icons.history),
+          ),
+          IconButton(
+            onPressed: () => FirebaseAuth.instance.signOut(),
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: reload,
+        child: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            Text(
+              'Hello, ${FirebaseAuth.instance.currentUser?.displayName ?? 'there'} 👋',
+              style: const TextStyle(fontSize: 27, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Choose your session mode.',
+              style: TextStyle(color: Colors.black54),
+            ),
+            const SizedBox(height: 18),
+            _modeCard(
+              context,
+              Icons.bolt,
+              'Immediate mode',
+              'Capture sensor readings before and after breathing.',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ImmediateScreen()),
+              ).then((_) => reload()),
+            ),
+            const SizedBox(height: 12),
+            _modeCard(
+              context,
+              Icons.calendar_month,
+              '15-day tracking mode',
+              'Daily cognitive tasks and breathing. Wearable readings on Days 1 and 15.',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LongTermScreen()),
+              ).then((_) => reload()),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _stat('Immediate sessions', loading ? '…' : '$immediate'),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _stat('Study days', loading ? '…' : '$days / 15'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'The readiness heuristic is experimental; it is not a trained ML model or medical diagnosis.',
+              style: TextStyle(color: Colors.black54, fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  Widget _modeCard(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) =>
+      Card(
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(16),
+          leading: CircleAvatar(
+            backgroundColor: mint,
+            child: Icon(icon, color: teal),
+          ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(subtitle),
+          ),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: onTap,
+        ),
+      );
+
+  Widget _stat(String label, String value) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: const TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+            ),
+            Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+          ],
+        ),
+      );
+}
+
+// ======================== IMMEDIATE MODE ========================
+
+class ImmediateScreen extends StatefulWidget {
+  const ImmediateScreen({super.key});
+
+  @override
+  State<ImmediateScreen> createState() => _ImmediateScreenState();
+}
+
+class _ImmediateScreenState extends State<ImmediateScreen> {
+  final band = BandService();
+  SensorReading? before, after;
+  bool demo = false, practiceDone = false, saving = false;
+  String routine = 'Anulom-Vilom (alternate-nostril breathing)';
+  String get uid => FirebaseAuth.instance.currentUser!.uid;
+
+  @override
+  void dispose() {
+    band.dispose();
+    super.dispose();
+  }
+
+  Future<void> connect() async {
+    final d = await pickBand(context);
+    if (d == null || !mounted) return;
+    try {
+      setState(() => demo = false);
+      await band.connect(d);
+    } catch (_) {
+      if (mounted) msg(context, 'Could not connect. Check the band and BLE settings.');
+    }
+  }
+
+  SensorReading? current() => demo ? SensorReading.demoBefore() : band.latest;
+
+  void captureBefore() {
+    final r = current();
+    if (r == null || !r.hasData) {
+      msg(context, 'Connect the band or select Demo data to test the UI.');
+      return;
+    }
+
+    setState(() {
+      before = r;
+      after = null;
+      practiceDone = false;
+    });
+
+    if (r.hr != null && r.hr! >= 100) {
+      routine = 'Gentle paced breathing';
+    } else if (r.motion != null && r.motion! >= 0.65) {
+      routine = 'Seated grounding and paced breathing';
+    } else {
+      routine = 'Anulom-Vilom (alternate-nostril breathing)';
+    }
+    setState(() {});
+  }
+
+  Future<void> practice() async {
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const BreathingScreen()),
+    );
+    if (mounted && ok == true) setState(() => practiceDone = true);
+  }
+
+  void captureAfter() {
+    if (!practiceDone) {
+      msg(context, 'Complete the breathing session first.');
+      return;
+    }
+    final r = demo ? SensorReading.demoAfter() : band.latest;
+    if (r == null) {
+      msg(context, 'No sensor data received yet.');
+      return;
+    }
+    setState(() => after = r);
+  }
+
+  Future<void> save() async {
+    if (before == null || after == null) return;
+    setState(() => saving = true);
+
+    await LogStore.save(
+      uid,
+      LogEntry(
+        mode: 'immediate',
+        date: todayKey(),
+        day: 0,
+        routine: routine,
+        before: before,
+        after: after,
+        demo: demo,
+      ),
+    );
+
+    if (mounted) {
+      setState(() => saving = false);
+      msg(context, 'Session saved locally.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: band,
+        builder: (context, _) => Scaffold(
+          appBar: AppBar(title: const Text('Immediate mode')),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text(
+                'Measure → breathe → measure',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Use actual BLE readings when available. Demo values are labelled and should not be treated as real research data.',
+                style: TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 14),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(demo ? 'DEMO DATA selected' : band.status),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          FilledButton.tonal(
+                            onPressed: connect,
+                            child: const Text('Connect band'),
+                          ),
+                          OutlinedButton(
+                            onPressed: () => setState(() => demo = true),
+                            child: const Text('Demo data'),
+                          ),
+                          if (band.connected)
+                            TextButton(
+                              onPressed: band.disconnect,
+                              child: const Text('Disconnect'),
+                            ),
+                        ],
+                      ),
+                      if (current() != null) _reading(current()!),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: captureBefore,
+                child: Text(
+                  before == null ? '1. Capture baseline' : 'Capture baseline again',
+                ),
+              ),
+              if (before != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  'Suggested routine: $routine',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  'This is a prototype rule. Confirm sensor units and thresholds before research use.',
+                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: practiceDone ? null : practice,
+                  child: Text(
+                    practiceDone ? 'Breathing complete' : '2. Start breathing practice',
+                  ),
+                ),
+              ],
+              if (practiceDone) ...[
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: captureAfter,
+                  child: Text(after == null ? '3. Capture after' : 'Capture after again'),
+                ),
+              ],
+              if (before != null && after != null) ...[
+                const SizedBox(height: 12),
+                _compare(before!, after!),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: saving ? null : save,
+                  icon: const Icon(Icons.save),
+                  label: Text(saving ? 'Saving…' : 'Save session'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+}
+
+Widget _reading(SensorReading r) => Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _pill('HR', r.hr, 'bpm'),
+        _pill('RMSSD', r.rmssd, 'ms'),
+        _pill('SDNN', r.sdnn, 'ms'),
+        _pill('GSR', r.gsr, 'units'),
+        _pill('Motion', r.motion, ''),
+      ],
+    );
+
+Widget _pill(String label, double? value, String unit) => Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: mint, borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11)),
+          Text(
+            value == null ? '—' : '${value.toStringAsFixed(1)} $unit',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+
+Widget _compare(SensorReading a, SensorReading b) => Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Before / after readings',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            for (final item in <(String, double?, double?)>[
+              ('Heart rate', a.hr, b.hr),
+              ('RMSSD', a.rmssd, b.rmssd),
+              ('SDNN', a.sdnn, b.sdnn),
+              ('GSR', a.gsr, b.gsr),
+              ('Motion', a.motion, b.motion),
+            ])
+              if (item.$2 != null || item.$3 != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${item.$1}: ${item.$2?.toStringAsFixed(1) ?? '—'} → ${item.$3?.toStringAsFixed(1) ?? '—'}',
+                      ),
+                      LinearProgressIndicator(
+                        value: ((item.$3 ?? 0).abs() /
+                                max(1.0, max((item.$2 ?? 0).abs(), (item.$3 ?? 0).abs())))
+                            .toDouble(),
+                      ),
+                    ],
+                  ),
+                ),
+          ],
+        ),
+      ),
+    );
+
+// ======================== BREATHING SESSION ========================
+
+class BreathingScreen extends StatefulWidget {
+  const BreathingScreen({super.key});
+
+  @override
+  State<BreathingScreen> createState() => _BreathingScreenState();
+}
+
+class _BreathingScreenState extends State<BreathingScreen> {
+  Timer? timer;
+  int seconds = 900;
+  bool running = false, done = false;
+
+  void start() {
+    if (running || done) return;
+    setState(() => running = true);
+    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return;
+      if (seconds <= 1) {
+        t.cancel();
+        setState(() {
+          seconds = 0;
+          running = false;
+          done = true;
+        });
+      } else {
+        setState(() => seconds--);
+      }
+    });
+  }
+
+  void finish() {
+    timer?.cancel();
+    Navigator.pop(context, true);
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Breathing practice')),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.spa, size: 70, color: teal),
+              const SizedBox(height: 16),
+              const Text(
+                'Anulom-Vilom',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Breathe gently and comfortably. Do not force or hold your breath. Stop if uncomfortable.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 26),
+              Text(
+                '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}',
+                style: const TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              if (!running && !done)
+                FilledButton(
+                  onPressed: start,
+                  child: const Text('Start 15-minute timer'),
+                )
+              else if (running)
+                OutlinedButton(
+                  onPressed: () {
+                    timer?.cancel();
+                    setState(() => running = false);
+                  },
+                  child: const Text('Pause'),
+                )
+              else
+                const Text('Timer complete'),
+              if (allowTestShortcut && !done)
+                TextButton(
+                  onPressed: finish,
+                  child: const Text('Finish now (review/demo shortcut)'),
+                ),
+              if (done)
+                FilledButton(
+                  onPressed: finish,
+                  child: const Text('Continue'),
+                ),
+            ],
+          ),
+        ),
+      );
+}
+
+// ======================== 15-DAY MODE ========================
+
+class LongTermScreen extends StatefulWidget {
+  const LongTermScreen({super.key});
+
+  @override
+  State<LongTermScreen> createState() => _LongTermScreenState();
+}
+
+class _LongTermScreenState extends State<LongTermScreen> {
+  DateTime? start;
+  List<LogEntry> logs = [];
+  String get uid => FirebaseAuth.instance.currentUser!.uid;
+  bool loading = true;
+
+  int get day =>
+      DateTime.now().difference(start ?? DateTime.now()).inDays + 1;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    final s = await LogStore.startDate(uid);
+    final l = await LogStore.load(uid);
+    if (mounted) {
+      setState(() {
+        start = s;
+        logs = l;
+        loading = false;
+      });
+    }
+  }
+
+  Future<void> today() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DailyStudyScreen(
+          uid: uid,
+          day: day.clamp(1, totalStudyDays).toInt(),
+        ),
+      ),
+    );
+    if (result == true) await load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final current = day.clamp(1, totalStudyDays).toInt();
+    final logged = logs
+        .where((e) => e.mode == 'long_term')
+        .map((e) => e.day)
+        .toSet();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('15-day tracking')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            'Day $current of $totalStudyDays',
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Study started ${start!.year}-${start!.month.toString().padLeft(2, '0')}-${start!.day.toString().padLeft(2, '0')}. Wearable days: 1 and 15.',
+            style: const TextStyle(color: Colors.black54),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (int d = 1; d <= totalStudyDays; d++)
+                Container(
+                  width: 48,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: logged.contains(d) ? mint : Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: teal.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('$d', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Icon(
+                        logged.contains(d)
+                            ? Icons.check_circle
+                            : (wearableDays.contains(d)
+                                ? Icons.watch
+                                : Icons.circle_outlined),
+                        size: 17,
+                        color: teal,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (day <= totalStudyDays)
+            SizedBox(
+              height: 52,
+              child: FilledButton(
+                onPressed: today,
+                child: Text(
+                  wearableDays.contains(current)
+                      ? 'Start Day $current with band'
+                      : 'Start today’s tasks',
+                ),
+              ),
+            ),
+          if (day > totalStudyDays)
+            const Text('The 15-day study has ended. Review logs and export the dataset.'),
+          const SizedBox(height: 10),
+          OutlinedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryScreen()),
+            ),
+            child: const Text('View history / export CSV'),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Daily cognitive tasks and practice logs are stored locally. The readiness heuristic is not a trained ML model.',
+            style: TextStyle(color: Colors.black54, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DailyStudyScreen extends StatefulWidget {
+  final String uid;
+  final int day;
+  const DailyStudyScreen({super.key, required this.uid, required this.day});
+
+  @override
+  State<DailyStudyScreen> createState() => _DailyStudyScreenState();
+}
+
+class _DailyStudyScreenState extends State<DailyStudyScreen> {
+  late final BandService band;
+  SensorReading? before, after;
+  bool demo = false, practised = false, saving = false;
+  int? preScore, postScore;
+  double? preRt, postRt;
+  int stress = 3, alertness = 3, fatigue = 3;
+
+  bool get needsBand => wearableDays.contains(widget.day);
+
+  @override
+  void initState() {
+    super.initState();
+    band = BandService();
+  }
+
+  @override
+  void dispose() {
+    band.dispose();
+    super.dispose();
+  }
+
+  Future<void> connect() async {
+    final d = await pickBand(context);
+    if (d == null || !mounted) return;
+    try {
+      setState(() => demo = false);
+      await band.connect(d);
+    } catch (_) {
+      if (mounted) msg(context, 'Could not connect to the band.');
+    }
+  }
+
+  Future<void> capture(bool post) async {
+    if (!demo && !band.connected) {
+      msg(context, 'Connect the band or enable demo data to test this screen.');
+      return;
+    }
+
+    final reading = demo
+        ? (post ? SensorReading.demoAfter() : SensorReading.demoBefore())
+        : band.latest;
+
+    if (reading == null) {
+      msg(context, 'No sensor packet received yet.');
+      return;
+    }
+    setState(() {
+      if (post) {
+        after = reading;
+      } else {
+        before = reading;
+      }
+    });
+  }
+
+  Future<void> task(bool post) async {
+    final result = await Navigator.push<TaskResult>(
+      context,
+      MaterialPageRoute(builder: (_) => const OneBackTaskScreen()),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        if (post) {
+          postScore = result.score;
+          postRt = result.reactionMs;
+        } else {
+          preScore = result.score;
+          preRt = result.reactionMs;
+        }
+      });
+    }
+  }
+
+  Future<void> practice() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const BreathingScreen()),
+    );
+    if (mounted && result == true) setState(() => practised = true);
+  }
+
+  Future<void> save() async {
+    if (preScore == null ||
+        postScore == null ||
+        !practised ||
+        (needsBand && (before == null || after == null))) {
+      msg(context, 'Complete all required steps before saving.');
+      return;
+    }
+    setState(() => saving = true);
+
+    await LogStore.save(
+      widget.uid,
+      LogEntry(
+        mode: 'long_term',
+        date: todayKey(),
+        day: widget.day,
+        routine: 'Anulom-Vilom',
+        before: before,
+        after: after,
+        preScore: preScore,
+        postScore: postScore,
+        preReaction: preRt,
+        postReaction: postRt,
+        stress: stress,
+        alertness: alertness,
+        fatigue: fatigue,
+        demo: needsBand && demo,
+      ),
+    );
+
+    if (mounted) {
+      setState(() => saving = false);
+      msg(context, 'Day ${widget.day} saved on this device.');
+      Navigator.pop(context, true);
+    }
+  }
+
+  Widget rating(String label, int value, ValueChanged<int> onChanged) =>
+      Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(label)),
+              Text('$value / 5'),
+            ],
+          ),
+          Slider(
+            min: 1,
+            max: 5,
+            divisions: 4,
+            value: value.toDouble(),
+            onChanged: (v) => onChanged(v.round()),
+          ),
+        ],
+      );
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: band,
+        builder: (context, _) => Scaffold(
+          appBar: AppBar(title: Text('Day ${widget.day} check-in')),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                needsBand
+                    ? 'Wearable day ${widget.day}'
+                    : 'Daily cognitive check-in',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                needsBand
+                    ? 'Capture readings before and after practice.'
+                    : 'No band required today; complete both cognitive tasks and breathing.',
+                style: const TextStyle(color: Colors.black54),
+              ),
+              if (needsBand) ...[
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Text(demo ? 'DEMO readings selected' : band.status),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            FilledButton.tonal(
+                              onPressed: connect,
+                              child: const Text('Connect band'),
+                            ),
+                            TextButton(
+                              onPressed: () => setState(() => demo = true),
+                              child: const Text('Demo data'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: () => capture(false),
+                  child: Text(before == null ? 'Capture baseline' : 'Capture baseline again'),
+                ),
+              ],
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => task(false),
+                child: Text(preScore == null ? '1. Pre-session cognitive task' : 'Repeat pre-task ($preScore%)'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: practised ? null : practice,
+                child: Text(practised ? 'Breathing complete' : '2. Start Anulom-Vilom'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: () => task(true),
+                child: Text(postScore == null ? '3. Post-session cognitive task' : 'Repeat post-task ($postScore%)'),
+              ),
+              if (needsBand) ...[
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: () => capture(true),
+                  child: Text(after == null ? 'Capture post-session reading' : 'Capture post-session again'),
+                ),
+              ],
+              const SizedBox(height: 18),
+              const Text(
+                'Self-rating (1–5)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              rating('Stress', stress, (v) => setState(() => stress = v)),
+              rating('Alertness', alertness, (v) => setState(() => alertness = v)),
+              rating('Fatigue', fatigue, (v) => setState(() => fatigue = v)),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 52,
+                child: FilledButton(
+                  onPressed: saving ? null : save,
+                  child: Text(saving ? 'Saving…' : 'Save Day ${widget.day}'),
+                ),
+              ),
+              if (demo && needsBand)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    'DEMO sensor data — exclude from real research analysis.',
+                    style: TextStyle(
+                      color: Colors.deepOrange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+}
+
+// ======================== COGNITIVE TASK ========================
+
+class TaskResult {
+  final int score;
+  final double? reactionMs;
+  const TaskResult(this.score, this.reactionMs);
+}
+
+class OneBackTaskScreen extends StatefulWidget {
+  const OneBackTaskScreen({super.key});
+
+  @override
+  State<OneBackTaskScreen> createState() => _OneBackTaskScreenState();
+}
+
+class _OneBackTaskScreenState extends State<OneBackTaskScreen> {
+  final random = Random();
+  late List<String> letters;
+  int index = 1, correct = 0, answered = 0;
+  DateTime shown = DateTime.now();
+  final reactions = <double>[];
+
+  @override
+  void initState() {
+    super.initState();
+    letters = [
+      for (int i = 0; i < 12; i++) String.fromCharCode(65 + random.nextInt(4)),
+    ];
+    for (int i = 1; i < letters.length; i++) {
+      if (random.nextDouble() < 0.3) {
+        letters[i] = letters[i - 1];
+      } else if (letters[i] == letters[i - 1]) {
+        letters[i] = String.fromCharCode(
+          65 + (letters[i].codeUnitAt(0) - 64) % 4,
+        );
+      }
+    }
+    shown = DateTime.now();
+  }
+
+  bool get target => letters[index] == letters[index - 1];
+
+  void answer(bool saysMatch) {
+    final correctAnswer = saysMatch == target;
+    if (correctAnswer) correct++;
+    answered++;
+    if (correctAnswer && saysMatch) {
+      reactions.add(DateTime.now().difference(shown).inMilliseconds.toDouble());
+    }
+
+    if (index == letters.length - 1) {
+      final score = (correct / answered * 100).round();
+      final reaction = reactions.isEmpty
+          ? null
+          : reactions.reduce((a, b) => a + b) / reactions.length;
+      Navigator.pop(context, TaskResult(score, reaction));
+    } else {
+      setState(() {
+        index++;
+        shown = DateTime.now();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('1-back memory task')),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Trial $index of ${letters.length - 1}',
+                style: const TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Does the current letter match the previous letter?',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                letters[index - 1],
+                style: const TextStyle(fontSize: 44, color: teal),
+              ),
+              const Text('Previous'),
+              const SizedBox(height: 18),
+              Text(
+                letters[index],
+                style: const TextStyle(fontSize: 70, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => answer(true),
+                      child: const Text('MATCH'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => answer(false),
+                      child: const Text('NO MATCH'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+// ======================== HISTORY AND CSV EXPORT ========================
+
+class HistoryScreen extends StatefulWidget {
+  const HistoryScreen({super.key});
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  late Future<List<LogEntry>> future;
+  String get uid => FirebaseAuth.instance.currentUser!.uid;
+
+  @override
+  void initState() {
+    super.initState();
+    future = LogStore.load(uid);
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('History and export')),
+        body: FutureBuilder<List<LogEntry>>(
+          future: future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final logs = (snapshot.data ?? []).reversed.toList();
+            if (logs.isEmpty) {
+              return const Center(child: Text('No saved sessions yet.'));
+            }
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                SizedBox(
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                        ClipboardData(
+                          text: LogStore.csv(logs.reversed.toList()),
+                        ),
+                      );
+                      if (context.mounted) {
+                        msg(context, 'CSV copied. Paste it into a spreadsheet.');
+                      }
+                    },
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copy CSV for analysis'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                for (final e in logs)
+                  Card(
+                    child: ExpansionTile(
+                      title: Text(
+                        e.mode == 'long_term'
+                            ? 'Day ${e.day} • ${e.date}'
+                            : 'Immediate • ${e.date}',
+                      ),
+                      subtitle: Text(
+                        'Pre score: ${e.preScore ?? '—'}% • '
+                        'Post score: ${e.postScore ?? '—'}%',
+                      ),
+                      childrenPadding: const EdgeInsets.all(16),
+                      children: [
+                        Text('Routine: ${e.routine}'),
+                        if (e.before != null) ...[
+                          const Text(
+                            'Before readings',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          _reading(e.before!),
+                        ],
+                        if (e.after != null) ...[
+                          const Text(
+                            'After readings',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          _reading(e.after!),
+                        ],
+                        Text(
+                          'Stress ${e.stress}/5 • '
+                          'Alertness ${e.alertness}/5 • '
+                          'Fatigue ${e.fatigue}/5',
+                        ),
+                        if (e.demo)
+                          const Text(
+                            'DEMO readings; exclude from real sensor analysis.',
+                            style: TextStyle(color: Colors.deepOrange),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      );
 }
