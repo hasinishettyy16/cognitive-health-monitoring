@@ -10,6 +10,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'firebase_options.dart';
 
 const teal = Color(0xFF006F66);
@@ -23,9 +24,7 @@ const bleDataUuid = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const YogaApp());
 }
 
@@ -34,22 +33,20 @@ class YogaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'Yoga Biofeedback',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: teal),
-          scaffoldBackgroundColor: const Color(0xFFF7FAF9),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-        ),
-        home: const AuthGate(),
-      );
+    title: 'Yoga Biofeedback',
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: teal),
+      scaffoldBackgroundColor: const Color(0xFFF7FAF9),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    ),
+    home: const AuthGate(),
+  );
 }
 
 void msg(BuildContext context, String text) {
@@ -87,18 +84,14 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          return snapshot.data == null
-              ? const WelcomeScreen()
-              : const HomeScreen();
-        },
-      );
+    stream: FirebaseAuth.instance.authStateChanges(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+      return snapshot.data == null ? const WelcomeScreen() : const HomeScreen();
+    },
+  );
 }
 
 class WelcomeScreen extends StatelessWidget {
@@ -106,81 +99,64 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircleAvatar(
-                  radius: 56,
-                  backgroundColor: mint,
-                  child: Icon(
-                    Icons.self_improvement,
-                    size: 70,
-                    color: teal,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Yoga Biofeedback',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Wearable measurements, guided breathing, '
-                  'and 15-day cognitive tracking.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.black54,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 38),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: FilledButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginScreen(),
-                      ),
-                    ),
-                    child: const Text('Login'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SignUpScreen(),
-                      ),
-                    ),
-                    child: const Text('Create an account'),
-                  ),
-                ),
-                const SizedBox(height: 28),
-                const Text(
-                  'Research prototype — not a medical diagnostic tool.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircleAvatar(
+              radius: 56,
+              backgroundColor: mint,
+              child: Icon(Icons.self_improvement, size: 70, color: teal),
             ),
-          ),
+            const SizedBox(height: 24),
+            const Text(
+              'Yoga Biofeedback',
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Wearable measurements, guided breathing, '
+              'and 15-day cognitive tracking.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54, fontSize: 16),
+            ),
+            const SizedBox(height: 38),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: FilledButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                ),
+                child: const Text('Login'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: OutlinedButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                ),
+                child: const Text('Create an account'),
+              ),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Research prototype Ã¢â‚¬â€ not a medical diagnostic tool.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class LoginScreen extends StatefulWidget {
@@ -238,60 +214,55 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Login')),
-        body: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const Text(
-              'Welcome back 👋',
-              style: TextStyle(
-                fontSize: 29,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: password,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-              onSubmitted: (_) {
-                if (!busy) login();
-              },
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                onPressed: busy ? null : login,
-                child: busy
-                    ? const CircularProgressIndicator()
-                    : const Text('Login'),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const SignUpScreen(),
-                ),
-              ),
-              child: const Text('New user? Create an account'),
-            ),
-          ],
+    appBar: AppBar(title: const Text('Login')),
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const Text(
+          'Welcome back Ã°Å¸â€˜â€¹',
+          style: TextStyle(fontSize: 29, fontWeight: FontWeight.bold),
         ),
-      );
+        const SizedBox(height: 24),
+        TextField(
+          controller: email,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            prefixIcon: Icon(Icons.email_outlined),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: password,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: 'Password',
+            prefixIcon: Icon(Icons.lock_outline),
+          ),
+          onSubmitted: (_) {
+            if (!busy) login();
+          },
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 52,
+          child: FilledButton(
+            onPressed: busy ? null : login,
+            child: busy
+                ? const CircularProgressIndicator()
+                : const Text('Login'),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SignUpScreen()),
+          ),
+          child: const Text('New user? Create an account'),
+        ),
+      ],
+    ),
+  );
 }
 
 class SignUpScreen extends StatefulWidget {
@@ -335,8 +306,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     setState(() => busy = true);
     try {
-      final result =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final result = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: e,
         password: p,
       );
@@ -358,56 +328,53 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Create account')),
-        body: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const Text(
-              'Create your account 🌿',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 22),
-            TextField(
-              controller: name,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                prefixIcon: Icon(Icons.person_outline),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: password,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password (6+ characters)',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                onPressed: busy ? null : createAccount,
-                child: busy
-                    ? const CircularProgressIndicator()
-                    : const Text('Create account'),
-              ),
-            ),
-          ],
+    appBar: AppBar(title: const Text('Create account')),
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const Text(
+          'Create your account Ã°Å¸Å’Â¿',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
-      );
+        const SizedBox(height: 22),
+        TextField(
+          controller: name,
+          decoration: const InputDecoration(
+            labelText: 'Name',
+            prefixIcon: Icon(Icons.person_outline),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: email,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            prefixIcon: Icon(Icons.email_outlined),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: password,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: 'Password (6+ characters)',
+            prefixIcon: Icon(Icons.lock_outline),
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 52,
+          child: FilledButton(
+            onPressed: busy ? null : createAccount,
+            child: busy
+                ? const CircularProgressIndicator()
+                : const Text('Create account'),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // ======================== SENSOR MODEL ========================
@@ -419,53 +386,41 @@ class SensorReading {
   final double? gsr;
   final double? motion;
 
-  const SensorReading({
-    this.hr,
-    this.rmssd,
-    this.sdnn,
-    this.gsr,
-    this.motion,
-  });
+  const SensorReading({this.hr, this.rmssd, this.sdnn, this.gsr, this.motion});
 
   bool get hasData =>
-      hr != null || rmssd != null || sdnn != null || gsr != null || motion != null;
+      hr != null ||
+      rmssd != null ||
+      sdnn != null ||
+      gsr != null ||
+      motion != null;
 
   Map<String, dynamic> toJson() => {
-        'hr': hr,
-        'rmssd': rmssd,
-        'sdnn': sdnn,
-        'gsr': gsr,
-        'motion': motion,
-      };
+    'hr': hr,
+    'rmssd': rmssd,
+    'sdnn': sdnn,
+    'gsr': gsr,
+    'motion': motion,
+  };
 
   factory SensorReading.fromJson(Map<String, dynamic> j) => SensorReading(
-        hr: _number(j['hr']),
-        rmssd: _number(j['rmssd']),
-        sdnn: _number(j['sdnn']),
-        gsr: _number(j['gsr']),
-        motion: _number(j['motion']),
-      );
+    hr: _number(j['hr']),
+    rmssd: _number(j['rmssd']),
+    sdnn: _number(j['sdnn']),
+    gsr: _number(j['gsr']),
+    motion: _number(j['motion']),
+  );
 
   static double? _number(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse('$value');
   }
 
-  static SensorReading demoBefore() => const SensorReading(
-        hr: 88,
-        rmssd: 28,
-        sdnn: 36,
-        gsr: 1.8,
-        motion: 0.24,
-      );
+  static SensorReading demoBefore() =>
+      const SensorReading(hr: 88, rmssd: 28, sdnn: 36, gsr: 1.8, motion: 0.24);
 
-  static SensorReading demoAfter() => const SensorReading(
-        hr: 79,
-        rmssd: 33,
-        sdnn: 40,
-        gsr: 1.6,
-        motion: 0.12,
-      );
+  static SensorReading demoAfter() =>
+      const SensorReading(hr: 79, rmssd: 33, sdnn: 40, gsr: 1.6, motion: 0.12);
 
   static SensorReading? parse(List<int> bytes) {
     final text = utf8.decode(bytes, allowMalformed: true).trim();
@@ -525,7 +480,7 @@ class BandService extends ChangeNotifier {
 
   Future<void> connect(BluetoothDevice d) async {
     await disconnect();
-    status = 'Connecting…';
+    status = 'ConnectingÃ¢â‚¬Â¦';
     notifyListeners();
 
     try {
@@ -636,7 +591,8 @@ class _BandPickerState extends State<BandPicker> {
           Permission.locationWhenInUse,
         ].request();
 
-        final modern = status[Permission.bluetoothScan]?.isGranted == true &&
+        final modern =
+            status[Permission.bluetoothScan]?.isGranted == true &&
             status[Permission.bluetoothConnect]?.isGranted == true;
         final legacy = status[Permission.locationWhenInUse]?.isGranted == true;
 
@@ -670,12 +626,12 @@ class _BandPickerState extends State<BandPicker> {
   Widget build(BuildContext context) {
     final list = results.values.toList()
       ..sort((a, b) {
-        final aMatch = a.device.platformName
-            .toLowerCase()
-            .startsWith(bandNamePrefix.toLowerCase());
-        final bMatch = b.device.platformName
-            .toLowerCase()
-            .startsWith(bandNamePrefix.toLowerCase());
+        final aMatch = a.device.platformName.toLowerCase().startsWith(
+          bandNamePrefix.toLowerCase(),
+        );
+        final bMatch = b.device.platformName.toLowerCase().startsWith(
+          bandNamePrefix.toLowerCase(),
+        );
         if (aMatch != bMatch) return aMatch ? -1 : 1;
         return b.rssi.compareTo(a.rssi);
       });
@@ -699,7 +655,9 @@ class _BandPickerState extends State<BandPicker> {
               children: [
                 Expanded(
                   child: Text(
-                    scanning ? 'Scanning…' : '${list.length} device(s) found',
+                    scanning
+                        ? 'ScanningÃ¢â‚¬Â¦'
+                        : '${list.length} device(s) found',
                   ),
                 ),
                 IconButton(onPressed: scan, icon: const Icon(Icons.refresh)),
@@ -710,7 +668,7 @@ class _BandPickerState extends State<BandPicker> {
                   ? Center(
                       child: Text(
                         scanning
-                            ? 'Searching for BLE devices…'
+                            ? 'Searching for BLE devicesÃ¢â‚¬Â¦'
                             : 'No band found. Check power and scan again.',
                       ),
                     )
@@ -725,7 +683,7 @@ class _BandPickerState extends State<BandPicker> {
                                   : result.device.platformName,
                             ),
                             subtitle: Text(
-                              '${result.device.remoteId.str} • ${result.rssi} dBm',
+                              '${result.device.remoteId.str} Ã¢â‚¬Â¢ ${result.rssi} dBm',
                             ),
                             onTap: () => Navigator.pop(context, result.device),
                           ),
@@ -774,42 +732,42 @@ class LogEntry {
   });
 
   Map<String, dynamic> toJson() => {
-        'mode': mode,
-        'date': date,
-        'day': day,
-        'routine': routine,
-        'before': before?.toJson(),
-        'after': after?.toJson(),
-        'preScore': preScore,
-        'postScore': postScore,
-        'preReaction': preReaction,
-        'postReaction': postReaction,
-        'stress': stress,
-        'alertness': alertness,
-        'fatigue': fatigue,
-        'demo': demo,
-      };
+    'mode': mode,
+    'date': date,
+    'day': day,
+    'routine': routine,
+    'before': before?.toJson(),
+    'after': after?.toJson(),
+    'preScore': preScore,
+    'postScore': postScore,
+    'preReaction': preReaction,
+    'postReaction': postReaction,
+    'stress': stress,
+    'alertness': alertness,
+    'fatigue': fatigue,
+    'demo': demo,
+  };
 
   factory LogEntry.fromJson(Map<String, dynamic> j) => LogEntry(
-        mode: '${j['mode']}',
-        date: '${j['date']}',
-        day: (j['day'] as num?)?.toInt() ?? 0,
-        routine: '${j['routine']}',
-        before: j['before'] is Map
-            ? SensorReading.fromJson(Map<String, dynamic>.from(j['before']))
-            : null,
-        after: j['after'] is Map
-            ? SensorReading.fromJson(Map<String, dynamic>.from(j['after']))
-            : null,
-        preScore: (j['preScore'] as num?)?.toInt(),
-        postScore: (j['postScore'] as num?)?.toInt(),
-        preReaction: (j['preReaction'] as num?)?.toDouble(),
-        postReaction: (j['postReaction'] as num?)?.toDouble(),
-        stress: (j['stress'] as num?)?.toInt() ?? 3,
-        alertness: (j['alertness'] as num?)?.toInt() ?? 3,
-        fatigue: (j['fatigue'] as num?)?.toInt() ?? 3,
-        demo: j['demo'] == true,
-      );
+    mode: '${j['mode']}',
+    date: '${j['date']}',
+    day: (j['day'] as num?)?.toInt() ?? 0,
+    routine: '${j['routine']}',
+    before: j['before'] is Map
+        ? SensorReading.fromJson(Map<String, dynamic>.from(j['before']))
+        : null,
+    after: j['after'] is Map
+        ? SensorReading.fromJson(Map<String, dynamic>.from(j['after']))
+        : null,
+    preScore: (j['preScore'] as num?)?.toInt(),
+    postScore: (j['postScore'] as num?)?.toInt(),
+    preReaction: (j['preReaction'] as num?)?.toDouble(),
+    postReaction: (j['postReaction'] as num?)?.toDouble(),
+    stress: (j['stress'] as num?)?.toInt() ?? 3,
+    alertness: (j['alertness'] as num?)?.toInt() ?? 3,
+    fatigue: (j['fatigue'] as num?)?.toInt() ?? 3,
+    demo: j['demo'] == true,
+  );
 }
 
 String todayKey() {
@@ -841,7 +799,8 @@ class LogStore {
 
     if (entry.mode == 'long_term') {
       list.removeWhere(
-        (e) => e.mode == entry.mode && e.day == entry.day && e.date == entry.date,
+        (e) =>
+            e.mode == entry.mode && e.day == entry.day && e.date == entry.date,
       );
     }
     list.add(entry);
@@ -867,22 +826,46 @@ class LogStore {
   static String csv(List<LogEntry> logs) {
     final rows = <List<String>>[
       [
-        'date', 'mode', 'day', 'routine', 'demo_sensor',
-        'pre_hr', 'post_hr', 'pre_rmssd', 'post_rmssd',
-        'pre_gsr', 'post_gsr', 'pre_score_pct', 'post_score_pct',
-        'pre_reaction_ms', 'post_reaction_ms',
-        'stress_1to5', 'alertness_1to5', 'fatigue_1to5',
+        'date',
+        'mode',
+        'day',
+        'routine',
+        'demo_sensor',
+        'pre_hr',
+        'post_hr',
+        'pre_rmssd',
+        'post_rmssd',
+        'pre_gsr',
+        'post_gsr',
+        'pre_score_pct',
+        'post_score_pct',
+        'pre_reaction_ms',
+        'post_reaction_ms',
+        'stress_1to5',
+        'alertness_1to5',
+        'fatigue_1to5',
       ],
     ];
     for (final e in logs) {
       rows.add([
-        e.date, e.mode, '${e.day}', e.routine, '${e.demo}',
-        '${e.before?.hr ?? ''}', '${e.after?.hr ?? ''}',
-        '${e.before?.rmssd ?? ''}', '${e.after?.rmssd ?? ''}',
-        '${e.before?.gsr ?? ''}', '${e.after?.gsr ?? ''}',
-        '${e.preScore ?? ''}', '${e.postScore ?? ''}',
-        '${e.preReaction ?? ''}', '${e.postReaction ?? ''}',
-        '${e.stress}', '${e.alertness}', '${e.fatigue}',
+        e.date,
+        e.mode,
+        '${e.day}',
+        e.routine,
+        '${e.demo}',
+        '${e.before?.hr ?? ''}',
+        '${e.after?.hr ?? ''}',
+        '${e.before?.rmssd ?? ''}',
+        '${e.after?.rmssd ?? ''}',
+        '${e.before?.gsr ?? ''}',
+        '${e.after?.gsr ?? ''}',
+        '${e.preScore ?? ''}',
+        '${e.postScore ?? ''}',
+        '${e.preReaction ?? ''}',
+        '${e.postReaction ?? ''}',
+        '${e.stress}',
+        '${e.alertness}',
+        '${e.fatigue}',
       ]);
     }
     return rows
@@ -953,7 +936,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(18),
           children: [
             Text(
-              'Hello, ${FirebaseAuth.instance.currentUser?.displayName ?? 'there'} 👋',
+              'Hello, ${FirebaseAuth.instance.currentUser?.displayName ?? 'there'} Ã°Å¸â€˜â€¹',
               style: const TextStyle(fontSize: 27, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
@@ -987,11 +970,17 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _stat('Immediate sessions', loading ? '…' : '$immediate'),
+                  child: _stat(
+                    'Immediate sessions',
+                    loading ? 'Ã¢â‚¬Â¦' : '$immediate',
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _stat('Study days', loading ? '…' : '$days / 15'),
+                  child: _stat(
+                    'Study days',
+                    loading ? 'Ã¢â‚¬Â¦' : '$days / 15',
+                  ),
                 ),
               ],
             ),
@@ -1012,41 +1001,43 @@ class _HomeScreenState extends State<HomeScreen> {
     String title,
     String subtitle,
     VoidCallback onTap,
-  ) =>
-      Card(
-        child: ListTile(
-          contentPadding: const EdgeInsets.all(16),
-          leading: CircleAvatar(
-            backgroundColor: mint,
-            child: Icon(icon, color: teal),
-          ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(subtitle),
-          ),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          onTap: onTap,
-        ),
-      );
+  ) => Card(
+    child: ListTile(
+      contentPadding: const EdgeInsets.all(16),
+      leading: CircleAvatar(
+        backgroundColor: mint,
+        child: Icon(icon, color: teal),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Text(subtitle),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
+    ),
+  );
 
   Widget _stat(String label, String value) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value,
-              style: const TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
-            ),
-            Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
-          ],
+        Text(
+          label,
+          style: const TextStyle(color: Colors.black54, fontSize: 12),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 // ======================== IMMEDIATE MODE ========================
@@ -1078,7 +1069,9 @@ class _ImmediateScreenState extends State<ImmediateScreen> {
       setState(() => demo = false);
       await band.connect(d);
     } catch (_) {
-      if (mounted) msg(context, 'Could not connect. Check the band and BLE settings.');
+      if (mounted) {
+        msg(context, 'Could not connect. Check the band and BLE settings.');
+      }
     }
   }
 
@@ -1153,165 +1146,179 @@ class _ImmediateScreenState extends State<ImmediateScreen> {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: band,
-        builder: (context, _) => Scaffold(
-          appBar: AppBar(title: const Text('Immediate mode')),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              const Text(
-                'Measure → breathe → measure',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Use actual BLE readings when available. Demo values are labelled and should not be treated as real research data.',
-                style: TextStyle(color: Colors.black54),
-              ),
-              const SizedBox(height: 14),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    animation: band,
+    builder: (context, _) => Scaffold(
+      appBar: AppBar(title: const Text('Immediate mode')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            'Measure Ã¢â€ â€™ breathe Ã¢â€ â€™ measure',
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Use actual BLE readings when available. Demo values are labelled and should not be treated as real research data.',
+            style: TextStyle(color: Colors.black54),
+          ),
+          const SizedBox(height: 14),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(demo ? 'DEMO DATA selected' : band.status),
+                  Wrap(
+                    spacing: 8,
                     children: [
-                      Text(demo ? 'DEMO DATA selected' : band.status),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          FilledButton.tonal(
-                            onPressed: connect,
-                            child: const Text('Connect band'),
-                          ),
-                          OutlinedButton(
-                            onPressed: () => setState(() => demo = true),
-                            child: const Text('Demo data'),
-                          ),
-                          if (band.connected)
-                            TextButton(
-                              onPressed: band.disconnect,
-                              child: const Text('Disconnect'),
-                            ),
-                        ],
+                      FilledButton.tonal(
+                        onPressed: connect,
+                        child: const Text('Connect band'),
                       ),
-                      if (current() != null) _reading(current()!),
+                      OutlinedButton(
+                        onPressed: () => setState(() => demo = true),
+                        child: const Text('Demo data'),
+                      ),
+                      if (band.connected)
+                        TextButton(
+                          onPressed: band.disconnect,
+                          child: const Text('Disconnect'),
+                        ),
                     ],
                   ),
-                ),
+                  if (current() != null) _reading(current()!),
+                ],
               ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: captureBefore,
-                child: Text(
-                  before == null ? '1. Capture baseline' : 'Capture baseline again',
-                ),
-              ),
-              if (before != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                  'Suggested routine: $routine',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  'This is a prototype rule. Confirm sensor units and thresholds before research use.',
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: practiceDone ? null : practice,
-                  child: Text(
-                    practiceDone ? 'Breathing complete' : '2. Start breathing practice',
-                  ),
-                ),
-              ],
-              if (practiceDone) ...[
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: captureAfter,
-                  child: Text(after == null ? '3. Capture after' : 'Capture after again'),
-                ),
-              ],
-              if (before != null && after != null) ...[
-                const SizedBox(height: 12),
-                _compare(before!, after!),
-                const SizedBox(height: 8),
-                FilledButton.icon(
-                  onPressed: saving ? null : save,
-                  icon: const Icon(Icons.save),
-                  label: Text(saving ? 'Saving…' : 'Save session'),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: captureBefore,
+            child: Text(
+              before == null ? '1. Capture baseline' : 'Capture baseline again',
+            ),
+          ),
+          if (before != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Suggested routine: $routine',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Text(
+              'This is a prototype rule. Confirm sensor units and thresholds before research use.',
+              style: TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: practiceDone ? null : practice,
+              child: Text(
+                practiceDone
+                    ? 'Breathing complete'
+                    : '2. Start breathing practice',
+              ),
+            ),
+          ],
+          if (practiceDone) ...[
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: captureAfter,
+              child: Text(
+                after == null ? '3. Capture after' : 'Capture after again',
+              ),
+            ),
+          ],
+          if (before != null && after != null) ...[
+            const SizedBox(height: 12),
+            _compare(before!, after!),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: saving ? null : save,
+              icon: const Icon(Icons.save),
+              label: Text(saving ? 'SavingÃ¢â‚¬Â¦' : 'Save session'),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 Widget _reading(SensorReading r) => Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _pill('HR', r.hr, 'bpm'),
-        _pill('RMSSD', r.rmssd, 'ms'),
-        _pill('SDNN', r.sdnn, 'ms'),
-        _pill('GSR', r.gsr, 'units'),
-        _pill('Motion', r.motion, ''),
-      ],
-    );
+  spacing: 8,
+  runSpacing: 8,
+  children: [
+    _pill('HR', r.hr, 'bpm'),
+    _pill('RMSSD', r.rmssd, 'ms'),
+    _pill('SDNN', r.sdnn, 'ms'),
+    _pill('GSR', r.gsr, 'units'),
+    _pill('Motion', r.motion, ''),
+  ],
+);
 
 Widget _pill(String label, double? value, String unit) => Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: mint, borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 11)),
-          Text(
-            value == null ? '—' : '${value.toStringAsFixed(1)} $unit',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ],
+  padding: const EdgeInsets.all(10),
+  decoration: BoxDecoration(
+    color: mint,
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: const TextStyle(fontSize: 11)),
+      Text(
+        value == null ? 'Ã¢â‚¬â€' : '${value.toStringAsFixed(1)} $unit',
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-    );
+    ],
+  ),
+);
 
 Widget _compare(SensorReading a, SensorReading b) => Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Before / after readings',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            for (final item in <(String, double?, double?)>[
-              ('Heart rate', a.hr, b.hr),
-              ('RMSSD', a.rmssd, b.rmssd),
-              ('SDNN', a.sdnn, b.sdnn),
-              ('GSR', a.gsr, b.gsr),
-              ('Motion', a.motion, b.motion),
-            ])
-              if (item.$2 != null || item.$3 != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${item.$1}: ${item.$2?.toStringAsFixed(1) ?? '—'} → ${item.$3?.toStringAsFixed(1) ?? '—'}',
-                      ),
-                      LinearProgressIndicator(
-                        value: ((item.$3 ?? 0).abs() /
-                                max(1.0, max((item.$2 ?? 0).abs(), (item.$3 ?? 0).abs())))
-                            .toDouble(),
-                      ),
-                    ],
-                  ),
-                ),
-          ],
+  child: Padding(
+    padding: const EdgeInsets.all(14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Before / after readings',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-      ),
-    );
+        for (final item in <(String, double?, double?)>[
+          ('Heart rate', a.hr, b.hr),
+          ('RMSSD', a.rmssd, b.rmssd),
+          ('SDNN', a.sdnn, b.sdnn),
+          ('GSR', a.gsr, b.gsr),
+          ('Motion', a.motion, b.motion),
+        ])
+          if (item.$2 != null || item.$3 != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${item.$1}: ${item.$2?.toStringAsFixed(1) ?? 'Ã¢â‚¬â€'} Ã¢â€ â€™ ${item.$3?.toStringAsFixed(1) ?? 'Ã¢â‚¬â€'}',
+                  ),
+                  LinearProgressIndicator(
+                    value:
+                        ((item.$3 ?? 0).abs() /
+                                max(
+                                  1.0,
+                                  max(
+                                    (item.$2 ?? 0).abs(),
+                                    (item.$3 ?? 0).abs(),
+                                  ),
+                                ))
+                            .toDouble(),
+                  ),
+                ],
+              ),
+            ),
+      ],
+    ),
+  ),
+);
 
 // ======================== BREATHING SESSION ========================
 
@@ -1358,58 +1365,55 @@ class _BreathingScreenState extends State<BreathingScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Breathing practice')),
-        body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.spa, size: 70, color: teal),
-              const SizedBox(height: 16),
-              const Text(
-                'Anulom-Vilom',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Breathe gently and comfortably. Do not force or hold your breath. Stop if uncomfortable.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 26),
-              Text(
-                '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}',
-                style: const TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              if (!running && !done)
-                FilledButton(
-                  onPressed: start,
-                  child: const Text('Start 15-minute timer'),
-                )
-              else if (running)
-                OutlinedButton(
-                  onPressed: () {
-                    timer?.cancel();
-                    setState(() => running = false);
-                  },
-                  child: const Text('Pause'),
-                )
-              else
-                const Text('Timer complete'),
-              if (allowTestShortcut && !done)
-                TextButton(
-                  onPressed: finish,
-                  child: const Text('Finish now (review/demo shortcut)'),
-                ),
-              if (done)
-                FilledButton(
-                  onPressed: finish,
-                  child: const Text('Continue'),
-                ),
-            ],
+    appBar: AppBar(title: const Text('Breathing practice')),
+    body: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.spa, size: 70, color: teal),
+          const SizedBox(height: 16),
+          const Text(
+            'Anulom-Vilom',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          const Text(
+            'Breathe gently and comfortably. Do not force or hold your breath. Stop if uncomfortable.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 26),
+          Text(
+            '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}',
+            style: const TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          if (!running && !done)
+            FilledButton(
+              onPressed: start,
+              child: const Text('Start 15-minute timer'),
+            )
+          else if (running)
+            OutlinedButton(
+              onPressed: () {
+                timer?.cancel();
+                setState(() => running = false);
+              },
+              child: const Text('Pause'),
+            )
+          else
+            const Text('Timer complete'),
+          if (allowTestShortcut && !done)
+            TextButton(
+              onPressed: finish,
+              child: const Text('Finish now (review/demo shortcut)'),
+            ),
+          if (done)
+            FilledButton(onPressed: finish, child: const Text('Continue')),
+        ],
+      ),
+    ),
+  );
 }
 
 // ======================== 15-DAY MODE ========================
@@ -1427,8 +1431,7 @@ class _LongTermScreenState extends State<LongTermScreen> {
   String get uid => FirebaseAuth.instance.currentUser!.uid;
   bool loading = true;
 
-  int get day =>
-      DateTime.now().difference(start ?? DateTime.now()).inDays + 1;
+  int get day => DateTime.now().difference(start ?? DateTime.now()).inDays + 1;
 
   @override
   void initState() {
@@ -1499,17 +1502,20 @@ class _LongTermScreenState extends State<LongTermScreen> {
                   decoration: BoxDecoration(
                     color: logged.contains(d) ? mint : Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: teal.withOpacity(0.2)),
+                    border: Border.all(color: teal.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     children: [
-                      Text('$d', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '$d',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       Icon(
                         logged.contains(d)
                             ? Icons.check_circle
                             : (wearableDays.contains(d)
-                                ? Icons.watch
-                                : Icons.circle_outlined),
+                                  ? Icons.watch
+                                  : Icons.circle_outlined),
                         size: 17,
                         color: teal,
                       ),
@@ -1527,12 +1533,14 @@ class _LongTermScreenState extends State<LongTermScreen> {
                 child: Text(
                   wearableDays.contains(current)
                       ? 'Start Day $current with band'
-                      : 'Start today’s tasks',
+                      : 'Start todayÃ¢â‚¬â„¢s tasks',
                 ),
               ),
             ),
           if (day > totalStudyDays)
-            const Text('The 15-day study has ended. Review logs and export the dataset.'),
+            const Text(
+              'The 15-day study has ended. Review logs and export the dataset.',
+            ),
           const SizedBox(height: 10),
           OutlinedButton(
             onPressed: () => Navigator.push(
@@ -1680,130 +1688,143 @@ class _DailyStudyScreenState extends State<DailyStudyScreen> {
     }
   }
 
-  Widget rating(String label, int value, ValueChanged<int> onChanged) =>
-      Column(
+  Widget rating(String label, int value, ValueChanged<int> onChanged) => Column(
+    children: [
+      Row(
         children: [
-          Row(
-            children: [
-              Expanded(child: Text(label)),
-              Text('$value / 5'),
-            ],
-          ),
-          Slider(
-            min: 1,
-            max: 5,
-            divisions: 4,
-            value: value.toDouble(),
-            onChanged: (v) => onChanged(v.round()),
-          ),
+          Expanded(child: Text(label)),
+          Text('$value / 5'),
         ],
-      );
+      ),
+      Slider(
+        min: 1,
+        max: 5,
+        divisions: 4,
+        value: value.toDouble(),
+        onChanged: (v) => onChanged(v.round()),
+      ),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: band,
-        builder: (context, _) => Scaffold(
-          appBar: AppBar(title: Text('Day ${widget.day} check-in')),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                needsBand
-                    ? 'Wearable day ${widget.day}'
-                    : 'Daily cognitive check-in',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                needsBand
-                    ? 'Capture readings before and after practice.'
-                    : 'No band required today; complete both cognitive tasks and breathing.',
-                style: const TextStyle(color: Colors.black54),
-              ),
-              if (needsBand) ...[
-                const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
+    animation: band,
+    builder: (context, _) => Scaffold(
+      appBar: AppBar(title: Text('Day ${widget.day} check-in')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            needsBand
+                ? 'Wearable day ${widget.day}'
+                : 'Daily cognitive check-in',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            needsBand ? 'Capture readings before and after practice.' : 'No band required today; complete both cognitive tasks and breathing.',
+            style: const TextStyle(color: Colors.black54),
+          ),
+          if (needsBand) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Text(demo ? 'DEMO readings selected' : band.status),
+                    Wrap(
+                      spacing: 8,
                       children: [
-                        Text(demo ? 'DEMO readings selected' : band.status),
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            FilledButton.tonal(
-                              onPressed: connect,
-                              child: const Text('Connect band'),
-                            ),
-                            TextButton(
-                              onPressed: () => setState(() => demo = true),
-                              child: const Text('Demo data'),
-                            ),
-                          ],
+                        FilledButton.tonal(
+                          onPressed: connect,
+                          child: const Text('Connect band'),
+                        ),
+                        TextButton(
+                          onPressed: () => setState(() => demo = true),
+                          child: const Text('Demo data'),
                         ),
                       ],
                     ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: () => capture(false),
-                  child: Text(before == null ? 'Capture baseline' : 'Capture baseline again'),
-                ),
-              ],
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: () => task(false),
-                child: Text(preScore == null ? '1. Pre-session cognitive task' : 'Repeat pre-task ($preScore%)'),
-              ),
-              const SizedBox(height: 8),
-              FilledButton(
-                onPressed: practised ? null : practice,
-                child: Text(practised ? 'Breathing complete' : '2. Start Anulom-Vilom'),
-              ),
-              const SizedBox(height: 8),
-              FilledButton(
-                onPressed: () => task(true),
-                child: Text(postScore == null ? '3. Post-session cognitive task' : 'Repeat post-task ($postScore%)'),
-              ),
-              if (needsBand) ...[
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: () => capture(true),
-                  child: Text(after == null ? 'Capture post-session reading' : 'Capture post-session again'),
-                ),
-              ],
-              const SizedBox(height: 18),
-              const Text(
-                'Self-rating (1–5)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              rating('Stress', stress, (v) => setState(() => stress = v)),
-              rating('Alertness', alertness, (v) => setState(() => alertness = v)),
-              rating('Fatigue', fatigue, (v) => setState(() => fatigue = v)),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 52,
-                child: FilledButton(
-                  onPressed: saving ? null : save,
-                  child: Text(saving ? 'Saving…' : 'Save Day ${widget.day}'),
+                  ],
                 ),
               ),
-              if (demo && needsBand)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Text(
-                    'DEMO sensor data — exclude from real research analysis.',
-                    style: TextStyle(
-                      color: Colors.deepOrange,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () => capture(false),
+              child: Text(
+                before == null ? 'Capture baseline' : 'Capture baseline again',
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: () => task(false),
+            child: Text(
+              preScore == null
+                  ? '1. Pre-session cognitive task'
+                  : 'Repeat pre-task ($preScore%)',
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: practised ? null : practice,
+            child: Text(
+              practised ? 'Breathing complete' : '2. Start Anulom-Vilom',
+            ),
+          ),
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: () => task(true),
+            child: Text(
+              postScore == null
+                  ? '3. Post-session cognitive task'
+                  : 'Repeat post-task ($postScore%)',
+            ),
+          ),
+          if (needsBand) ...[
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () => capture(true),
+              child: Text(
+                after == null
+                    ? 'Capture post-session reading'
+                    : 'Capture post-session again',
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          const Text(
+            'Self-rating (1Ã¢â‚¬â€œ5)',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          rating('Stress', stress, (v) => setState(() => stress = v)),
+          rating('Alertness', alertness, (v) => setState(() => alertness = v)),
+          rating('Fatigue', fatigue, (v) => setState(() => fatigue = v)),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 52,
+            child: FilledButton(
+              onPressed: saving ? null : save,
+              child: Text(saving ? 'SavingÃ¢â‚¬Â¦' : 'Save Day ${widget.day}'),
+            ),
+          ),
+          if (demo && needsBand)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'DEMO sensor data Ã¢â‚¬â€ exclude from real research analysis.',
+                style: TextStyle(
+                  color: Colors.deepOrange,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ======================== COGNITIVE TASK ========================
@@ -1872,55 +1893,55 @@ class _OneBackTaskScreenState extends State<OneBackTaskScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('1-back memory task')),
-        body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+    appBar: AppBar(title: const Text('1-back memory task')),
+    body: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Trial $index of ${letters.length - 1}',
+            style: const TextStyle(color: Colors.black54),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Does the current letter match the previous letter?',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            letters[index - 1],
+            style: const TextStyle(fontSize: 44, color: teal),
+          ),
+          const Text('Previous'),
+          const SizedBox(height: 18),
+          Text(
+            letters[index],
+            style: const TextStyle(fontSize: 70, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 28),
+          Row(
             children: [
-              Text(
-                'Trial $index of ${letters.length - 1}',
-                style: const TextStyle(color: Colors.black54),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => answer(true),
+                  child: const Text('MATCH'),
+                ),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Does the current letter match the previous letter?',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                letters[index - 1],
-                style: const TextStyle(fontSize: 44, color: teal),
-              ),
-              const Text('Previous'),
-              const SizedBox(height: 18),
-              Text(
-                letters[index],
-                style: const TextStyle(fontSize: 70, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => answer(true),
-                      child: const Text('MATCH'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => answer(false),
-                      child: const Text('NO MATCH'),
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => answer(false),
+                  child: const Text('NO MATCH'),
+                ),
               ),
             ],
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 // ======================== HISTORY AND CSV EXPORT ========================
@@ -1944,84 +1965,82 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('History and export')),
-        body: FutureBuilder<List<LogEntry>>(
-          future: future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final logs = (snapshot.data ?? []).reversed.toList();
-            if (logs.isEmpty) {
-              return const Center(child: Text('No saved sessions yet.'));
-            }
+    appBar: AppBar(title: const Text('History and export')),
+    body: FutureBuilder<List<LogEntry>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final logs = (snapshot.data ?? []).reversed.toList();
+        if (logs.isEmpty) {
+          return const Center(child: Text('No saved sessions yet.'));
+        }
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                SizedBox(
-                  height: 48,
-                  child: FilledButton.icon(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(
-                          text: LogStore.csv(logs.reversed.toList()),
-                        ),
-                      );
-                      if (context.mounted) {
-                        msg(context, 'CSV copied. Paste it into a spreadsheet.');
-                      }
-                    },
-                    icon: const Icon(Icons.copy),
-                    label: const Text('Copy CSV for analysis'),
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            SizedBox(
+              height: 48,
+              child: FilledButton.icon(
+                onPressed: () async {
+                  await Clipboard.setData(
+                    ClipboardData(text: LogStore.csv(logs.reversed.toList())),
+                  );
+                  if (context.mounted) {
+                    msg(context, 'CSV copied. Paste it into a spreadsheet.');
+                  }
+                },
+                icon: const Icon(Icons.copy),
+                label: const Text('Copy CSV for analysis'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            for (final e in logs)
+              Card(
+                child: ExpansionTile(
+                  title: Text(
+                    e.mode == 'long_term'
+                        ? 'Day ${e.day} Ã¢â‚¬Â¢ ${e.date}'
+                        : 'Immediate Ã¢â‚¬Â¢ ${e.date}',
                   ),
-                ),
-                const SizedBox(height: 12),
-                for (final e in logs)
-                  Card(
-                    child: ExpansionTile(
-                      title: Text(
-                        e.mode == 'long_term'
-                            ? 'Day ${e.day} • ${e.date}'
-                            : 'Immediate • ${e.date}',
+                  subtitle: Text(
+                    'Pre score: ${e.preScore ?? 'Ã¢â‚¬â€'}% Ã¢â‚¬Â¢ '
+                    'Post score: ${e.postScore ?? 'Ã¢â‚¬â€'}%',
+                  ),
+                  childrenPadding: const EdgeInsets.all(16),
+                  children: [
+                    Text('Routine: ${e.routine}'),
+                    if (e.before != null) ...[
+                      const Text(
+                        'Before readings',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text(
-                        'Pre score: ${e.preScore ?? '—'}% • '
-                        'Post score: ${e.postScore ?? '—'}%',
+                      _reading(e.before!),
+                    ],
+                    if (e.after != null) ...[
+                      const Text(
+                        'After readings',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      childrenPadding: const EdgeInsets.all(16),
-                      children: [
-                        Text('Routine: ${e.routine}'),
-                        if (e.before != null) ...[
-                          const Text(
-                            'Before readings',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          _reading(e.before!),
-                        ],
-                        if (e.after != null) ...[
-                          const Text(
-                            'After readings',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          _reading(e.after!),
-                        ],
-                        Text(
-                          'Stress ${e.stress}/5 • '
-                          'Alertness ${e.alertness}/5 • '
-                          'Fatigue ${e.fatigue}/5',
-                        ),
-                        if (e.demo)
-                          const Text(
-                            'DEMO readings; exclude from real sensor analysis.',
-                            style: TextStyle(color: Colors.deepOrange),
-                          ),
-                      ],
+                      _reading(e.after!),
+                    ],
+                    Text(
+                      'Stress ${e.stress}/5 Ã¢â‚¬Â¢ '
+                      'Alertness ${e.alertness}/5 Ã¢â‚¬Â¢ '
+                      'Fatigue ${e.fatigue}/5',
                     ),
-                  ),
-              ],
-            );
-          },
-        ),
-      );
+                    if (e.demo)
+                      const Text(
+                        'DEMO readings; exclude from real sensor analysis.',
+                        style: TextStyle(color: Colors.deepOrange),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    ),
+  );
 }

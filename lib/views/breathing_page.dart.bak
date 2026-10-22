@@ -1,0 +1,246 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../config.dart';
+import '../services/firestore_service.dart';
+import '../services/study_progress.dart';
+
+class _Phase {
+  final String text;
+  final int seconds;
+  final bool inhale;
+  const _Phase(this.text, this.seconds, this.inhale);
+}
+
+const List<_Phase> _phases = [
+  _Phase('Inhale through the LEFT nostril', 4, true),
+  _Phase('Exhale through the RIGHT nostril', 6, false),
+  _Phase('Inhale through the RIGHT nostril', 4, true),
+  _Phase('Exhale through the LEFT nostril', 6, false),
+];
+
+/// 15-minute guided Anulom-Vilom (alternate-nostril) session.
+class BreathingPage extends StatefulWidget {
+  final String uid;
+  final int day;
+  final StudyProgress progress;
+
+  const BreathingPage({
+    super.key,
+    required this.uid,
+    required this.day,
+    required this.progress,
+  });
+
+  @override
+  State<BreathingPage> createState() => _BreathingPageState();
+}
+
+class _BreathingPageState extends State<BreathingPage> {
+  static const int _totalSeconds = StudyConfig.breathingMinutes * 60;
+  static const int _cycleSeconds = 20;
+
+  Timer? _timer;
+  DateTime? _startedAt;
+  int _elapsed = 0;
+  bool _running = false;
+  bool _done = false;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _start() {
+    _startedAt = DateTime.now();
+    setState(() {
+      _running = true;
+      _elapsed = 0;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final e = DateTime.now().difference(_startedAt!).inSeconds;
+      if (e >= _totalSeconds) {
+        _finish(_totalSeconds);
+      } else if (mounted) {
+        setState(() => _elapsed = e);
+      }
+    });
+  }
+
+  Future<void> _finish(int seconds) async {
+    _timer?.cancel();
+    if (_saving) return;
+    setState(() {
+      _running = false;
+      _saving = true;
+    });
+    await FirestoreService.saveBreathingLog(
+      uid: widget.uid,
+      day: widget.day,
+      durationSeconds: seconds,
+    );
+    await widget.progress.markDone(widget.day, 'breath');
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      _done = true;
+    });
+  }
+
+  Future<bool> _confirmQuit() async {
+    final r = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Stop the session?'),
+        content: const Text('Your progress for this session will not be saved.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep going')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Stop')),
+        ],
+      ),
+    );
+    return r ?? false;
+  }
+
+  String _mmss(int s) {
+    final m = (s ~/ 60).toString().padLeft(2, '0');
+    final r = (s % 60).toString().padLeft(2, '0');
+    return '$m:$r';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return PopScope(
+      canPop: !_running,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final quit = await _confirmQuit();
+        if (quit && mounted) {
+          _timer?.cancel();
+          Navigator.of(context).pop(false);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text('Day ${widget.day} · Guided breathing')),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: _done ? _doneView(cs) : (_running ? _runningView(cs) : _introView()),
+        ),
+      ),
+    );
+  }
+
+  Widget _introView() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.self_improvement, size: 80),
+        const SizedBox(height: 16),
+        Text('Anulom-Vilom (alternate nostril breathing)',
+            textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        const Text(
+          'Sit upright and relax your shoulders. Use your right thumb to close the right nostril '
+          'and your ring finger to close the left. Follow the on-screen cues for '
+          '${StudyConfig.breathingMinutes} minutes.',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 28),
+        if (_saving)
+          const CircularProgressIndicator()
+        else
+          FilledButton.icon(
+            onPressed: _start,
+            icon: const Icon(Icons.play_arrow),
+            label: const Padding(padding: EdgeInsets.all(12), child: Text('Start session')),
+          ),
+        if (StudyConfig.testShortcuts) ...[
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: _saving ? null : () => _finish(0),
+            child: const Text('Finish now (testing only)'),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _runningView(ColorScheme cs) {
+    final inCycle = _elapsed % _cycleSeconds;
+    int acc = 0;
+    int idx = 0;
+    for (int i = 0; i < _phases.length; i++) {
+      if (inCycle < acc + _phases[i].seconds) {
+        idx = i;
+        break;
+      }
+      acc += _phases[i].seconds;
+    }
+    final phase = _phases[idx];
+    final double size = phase.inhale ? 230 : 130;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(_mmss(_totalSeconds - _elapsed), style: Theme.of(context).textTheme.displaySmall),
+        const Text('remaining'),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 240,
+          child: Center(
+            child: AnimatedContainer(
+              duration: Duration(seconds: phase.seconds),
+              curve: Curves.easeInOut,
+              width: size,
+              height: size,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: cs.primaryContainer),
+              alignment: Alignment.center,
+              child: Text(phase.inhale ? 'Inhale' : 'Exhale',
+                  style: Theme.of(context).textTheme.titleLarge),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(phase.text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 16),
+        LinearProgressIndicator(value: _elapsed / _totalSeconds, minHeight: 8),
+        const SizedBox(height: 24),
+        OutlinedButton(
+          onPressed: () async {
+            if (await _confirmQuit() && mounted) {
+              _timer?.cancel();
+              Navigator.of(context).pop(false);
+            }
+          },
+          child: const Text('Stop'),
+        ),
+        if (StudyConfig.testShortcuts)
+          TextButton(
+            onPressed: () => _finish(_elapsed),
+            child: const Text('Finish now (testing only)'),
+          ),
+      ],
+    );
+  }
+
+  Widget _doneView(ColorScheme cs) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.check_circle, size: 88, color: cs.primary),
+        const SizedBox(height: 16),
+        Text('Session complete', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        const Text('Now take the post-session puzzle from the dashboard.'),
+        const SizedBox(height: 28),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Padding(padding: EdgeInsets.all(12), child: Text('Back to dashboard')),
+        ),
+      ],
+    );
+  }
+}
