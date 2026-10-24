@@ -219,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.all(24),
       children: [
         const Text(
-          'Welcome back Ã°Å¸â€˜â€¹',
+          'Welcome back 👋',
           style: TextStyle(fontSize: 29, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 24),
@@ -333,7 +333,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       padding: const EdgeInsets.all(24),
       children: [
         const Text(
-          'Create your account Ã°Å¸Å’Â¿',
+          'Create your account 🌿',
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 22),
@@ -480,7 +480,7 @@ class BandService extends ChangeNotifier {
 
   Future<void> connect(BluetoothDevice d) async {
     await disconnect();
-    status = 'ConnectingÃ¢â‚¬Â¦';
+    status = 'Connecting…';
     notifyListeners();
 
     try {
@@ -656,7 +656,7 @@ class _BandPickerState extends State<BandPicker> {
                 Expanded(
                   child: Text(
                     scanning
-                        ? 'ScanningÃ¢â‚¬Â¦'
+                        ? 'Scanning…'
                         : '${list.length} device(s) found',
                   ),
                 ),
@@ -668,7 +668,7 @@ class _BandPickerState extends State<BandPicker> {
                   ? Center(
                       child: Text(
                         scanning
-                            ? 'Searching for BLE devicesÃ¢â‚¬Â¦'
+                            ? 'Searching for BLE devices…'
                             : 'No band found. Check power and scan again.',
                       ),
                     )
@@ -683,7 +683,7 @@ class _BandPickerState extends State<BandPicker> {
                                   : result.device.platformName,
                             ),
                             subtitle: Text(
-                              '${result.device.remoteId.str} Ã¢â‚¬Â¢ ${result.rssi} dBm',
+                              '${result.device.remoteId.str} • ${result.rssi} dBm',
                             ),
                             onTap: () => Navigator.pop(context, result.device),
                           ),
@@ -936,7 +936,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(18),
           children: [
             Text(
-              'Hello, ${FirebaseAuth.instance.currentUser?.displayName ?? 'there'} Ã°Å¸â€˜â€¹',
+              'Hello, ${FirebaseAuth.instance.currentUser?.displayName ?? 'there'} 👋',
               style: const TextStyle(fontSize: 27, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
@@ -972,14 +972,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _stat(
                     'Immediate sessions',
-                    loading ? 'Ã¢â‚¬Â¦' : '$immediate',
+                    loading ? '…' : '$immediate',
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _stat(
                     'Study days',
-                    loading ? 'Ã¢â‚¬Â¦' : '$days / 15',
+                    loading ? '…' : '$days / 15',
                   ),
                 ),
               ],
@@ -1153,7 +1153,7 @@ class _ImmediateScreenState extends State<ImmediateScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Measure Ã¢â€ â€™ breathe Ã¢â€ â€™ measure',
+            'Measure → breathe → measure',
             style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
@@ -1235,7 +1235,7 @@ class _ImmediateScreenState extends State<ImmediateScreen> {
             FilledButton.icon(
               onPressed: saving ? null : save,
               icon: const Icon(Icons.save),
-              label: Text(saving ? 'SavingÃ¢â‚¬Â¦' : 'Save session'),
+              label: Text(saving ? 'Saving…' : 'Save session'),
             ),
           ],
         ],
@@ -1298,7 +1298,7 @@ Widget _compare(SensorReading a, SensorReading b) => Card(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${item.$1}: ${item.$2?.toStringAsFixed(1) ?? 'Ã¢â‚¬â€'} Ã¢â€ â€™ ${item.$3?.toStringAsFixed(1) ?? 'Ã¢â‚¬â€'}',
+                    '${item.$1}: ${item.$2?.toStringAsFixed(1) ?? 'Ã¢â‚¬â€'} → ${item.$3?.toStringAsFixed(1) ?? 'Ã¢â‚¬â€'}',
                   ),
                   LinearProgressIndicator(
                     value:
@@ -1533,7 +1533,7 @@ class _LongTermScreenState extends State<LongTermScreen> {
                 child: Text(
                   wearableDays.contains(current)
                       ? 'Start Day $current with band'
-                      : 'Start todayÃ¢â‚¬â„¢s tasks',
+                      : 'Start today’s tasks',
                 ),
               ),
             ),
@@ -1796,7 +1796,7 @@ class _DailyStudyScreenState extends State<DailyStudyScreen> {
           ],
           const SizedBox(height: 18),
           const Text(
-            'Self-rating (1Ã¢â‚¬â€œ5)',
+            'Self-rating (1–5)',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           rating('Stress', stress, (v) => setState(() => stress = v)),
@@ -1807,7 +1807,7 @@ class _DailyStudyScreenState extends State<DailyStudyScreen> {
             height: 52,
             child: FilledButton(
               onPressed: saving ? null : save,
-              child: Text(saving ? 'SavingÃ¢â‚¬Â¦' : 'Save Day ${widget.day}'),
+              child: Text(saving ? 'Saving…' : 'Save Day ${widget.day}'),
             ),
           ),
           if (demo && needsBand)
@@ -2001,12 +2001,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: ExpansionTile(
                   title: Text(
                     e.mode == 'long_term'
-                        ? 'Day ${e.day} Ã¢â‚¬Â¢ ${e.date}'
-                        : 'Immediate Ã¢â‚¬Â¢ ${e.date}',
+                        ? 'Day ${e.day} • ${e.date}'
+                        : 'Immediate • ${e.date}',
                   ),
                   subtitle: Text(
-                    'Pre score: ${e.preScore ?? 'Ã¢â‚¬â€'}% Ã¢â‚¬Â¢ '
-                    'Post score: ${e.postScore ?? 'Ã¢â‚¬â€'}%',
+                    'Pre score: ${e.preScore ?? 'N/A'}% • '
+                    'Post score: ${e.postScore ?? 'N/A'}%',
                   ),
                   childrenPadding: const EdgeInsets.all(16),
                   children: [
@@ -2026,8 +2026,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       _reading(e.after!),
                     ],
                     Text(
-                      'Stress ${e.stress}/5 Ã¢â‚¬Â¢ '
-                      'Alertness ${e.alertness}/5 Ã¢â‚¬Â¢ '
+                      'Stress ${e.stress}/5 • '
+                      'Alertness ${e.alertness}/5 • '
                       'Fatigue ${e.fatigue}/5',
                     ),
                     if (e.demo)

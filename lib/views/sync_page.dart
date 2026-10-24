@@ -106,7 +106,7 @@ class _SyncPageState extends State<SyncPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Day ${widget.day} Â· Wearable sync'),
+        title: Text('Day ${widget.day} · Wearable sync'),
       ),
       body: ValueListenableBuilder<BleStatus>(
         valueListenable: _ble.status,
@@ -186,7 +186,7 @@ class _SyncPageState extends State<SyncPage> {
               padding: const EdgeInsets.all(12),
               child: Text(
                 status == BleStatus.scanning
-                    ? 'Scanningâ€¦'
+                    ? 'Scanning…'
                     : 'Scan for band',
               ),
             ),
@@ -272,7 +272,7 @@ class _SyncPageState extends State<SyncPage> {
                   valueListenable: _ble.latest,
                   builder: (_, reading, _) {
                     if (reading == null) {
-                      return const Text('Waiting for first readingâ€¦');
+                      return const Text('Waiting for first reading…');
                     }
 
                     String formatValue(double? value, [int decimals = 2]) {
@@ -298,7 +298,7 @@ class _SyncPageState extends State<SyncPage> {
                         ),
                         Text(
                           'GSR: '
-                          '${formatValue(reading.skinConductanceUs)} ÂµS',
+                          '${formatValue(reading.skinConductanceUs)} µS',
                         ),
                         Text(
                           'Motion: '
