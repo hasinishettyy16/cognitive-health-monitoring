@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
+import 'views/cri_dashboard_page.dart';
 
 const teal = Color(0xFF006F66);
 const mint = Color(0xFFE4F3EF);
@@ -655,9 +656,7 @@ class _BandPickerState extends State<BandPicker> {
               children: [
                 Expanded(
                   child: Text(
-                    scanning
-                        ? 'Scanning…'
-                        : '${list.length} device(s) found',
+                    scanning ? 'Scanning…' : '${list.length} device(s) found',
                   ),
                 ),
                 IconButton(onPressed: scan, icon: const Icon(Icons.refresh)),
@@ -935,6 +934,27 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(18),
           children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                child: ListTile(
+                  leading: const Icon(Icons.insights),
+                  title: const Text('Cognitive Readiness Index (CRI)'),
+                  subtitle: const Text(
+                    'Calculate CRI from sensor and cognitive-task data.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const CriDashboardPage(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
             Text(
               'Hello, ${FirebaseAuth.instance.currentUser?.displayName ?? 'there'} 👋',
               style: const TextStyle(fontSize: 27, fontWeight: FontWeight.bold),
@@ -977,10 +997,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _stat(
-                    'Study days',
-                    loading ? '…' : '$days / 15',
-                  ),
+                  child: _stat('Study days', loading ? '…' : '$days / 15'),
                 ),
               ],
             ),
